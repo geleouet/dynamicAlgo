@@ -13,7 +13,7 @@ class SolveurTest {
 	@Test // long test ~ 500ms / step
 	void should_solve_first_then_quit() {
 		// GIVEN
-		Solveur solveur = new Solveur(24);
+		Solveur solveur = Solveur.limit(4).periode(24);
 		double a0[] = new double[] {10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.};
 		double a1[] = new double[] {1. ,20.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.};
 		double a2[] = new double[] {20.,10.,10.,20.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.,10.};
@@ -28,12 +28,12 @@ class SolveurTest {
 		Assertions.assertThat(result).isEqualTo(new int[] {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
 	}
 	
-	//@Test // long test ~ 100 minutes
+	@Test // long test ~ 100 minutes
 	void should_solve_real_datas() {
 		// GIVEN
 		Random r = new Random();
 		r.setSeed("REAL".hashCode());
-		Solveur solveur = new Solveur(24);
+		Solveur solveur = Solveur.limit(4).periode(24);
 		Solveur.Data[] datas = new Solveur.Data[10];
 		for (int i = 0; i < 10; i++) {
 			double[] a = new double[364*24];
@@ -47,7 +47,18 @@ class SolveurTest {
 		int[] result = solveur.solve(datas);
 		
 		// THEN
+		int sum = Arrays.stream(result).sum();
+		int sumAlt = altSum(result);
+		int sumAlt2 = altSum2(result);
+		
+		System.out.println(sum + " " + sumAlt + " " + sumAlt2);
+		  
 		Assertions.assertThat(result).isNotEmpty();
+		Assertions.assertThat(result).isNotEmpty();
+		Assertions.assertThat(sum).isEqualTo(39248);
+		Assertions.assertThat(sumAlt).isEqualTo(20);
+		Assertions.assertThat(sumAlt2).isEqualTo(157536);
+	
 	}
 	
 	@Test // long test ~ 100s
@@ -55,7 +66,7 @@ class SolveurTest {
 		// GIVEN
 		Random r = new Random();
 		r.setSeed("REAL".hashCode());
-		Solveur solveur = new Solveur(12);
+		Solveur solveur = Solveur.limit(4).periode(12);
 		Solveur.Data[] datas = new Solveur.Data[10];
 		for (int i = 0; i < 10; i++) {
 			double[] a = new double[364*12];
@@ -79,6 +90,35 @@ class SolveurTest {
 		Assertions.assertThat(sumAlt).isEqualTo(-96);
 		Assertions.assertThat(sumAlt2).isEqualTo(77948);
 	}
+	@Test // long test ~ 20s
+	void should_solve_real_datas_alternative_constraint() {
+		// GIVEN
+		Random r = new Random();
+		r.setSeed("REAL".hashCode());
+		Solveur solveur = Solveur.limit(3).periode(20);
+		Solveur.Data[] datas = new Solveur.Data[10];
+		for (int i = 0; i < 10; i++) {
+			double[] a = new double[364*24];
+			for (int h = 0; h < 364*24; h++) {
+				a[h] = r.nextDouble() * 100;
+			}
+			datas[i] = new Solveur.Data(a);
+		}
+		
+		// WHEN
+		int[] result = solveur.solve(datas);
+		
+		// THEN
+		int sum = Arrays.stream(result).sum();
+		int sumAlt = altSum(result);
+		int sumAlt2 = altSum2(result);
+		
+		System.out.println(sum + " " + sumAlt + " " + sumAlt2);
+		Assertions.assertThat(result).isNotEmpty();
+		Assertions.assertThat(sum).isEqualTo(38707);
+		Assertions.assertThat(sumAlt).isEqualTo(-15);
+		Assertions.assertThat(sumAlt2).isEqualTo(155069);
+	}
 
 	private int altSum(int[] result) {
 		int r = 0;
@@ -99,8 +139,40 @@ class SolveurTest {
 	@Test
 	void should_solve_back_and_forth() {
 		// GIVEN
-		Solveur solveur = new Solveur(3);
-		double a0[] = new double[] { 10., 10., 10., 1.};
+		Solveur solveur = Solveur.limit(4).periode(3);
+		double a0[] = new double[] { 10., 10., 10.,  1.};
+		double a1[] = new double[] {  1., 20.,  1., 10.};
+		double a2[] = new double[] { 20., 10., 10., 20.};
+		double a3[] = new double[] { 20., 10., 10., 20.};
+		double a4[] = new double[] { 20., 10., 10., 20.};
+		
+		// WHEN
+		int[] result = solveur.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
+		
+		// THEN
+		Assertions.assertThat(result).isEqualTo(new int[] {1, 0, 1, 0});
+	}
+	@Test
+	void should_solve_back_and_forth_limit_4_changes() {
+		// GIVEN
+		Solveur solveur = Solveur.limit(4).periode(10);
+		double a0[] = new double[] { 10.,  1., 10.,  1., 90.,  1.};
+		double a1[] = new double[] {  1., 20.,  1., 10.,  1., 90.};
+		double a2[] = new double[] { 20., 10., 10., 20., 10., 90.};
+		double a3[] = new double[] { 20., 10., 10., 20., 10., 90.};
+		double a4[] = new double[] { 20., 10., 10., 20., 10., 90.};
+		
+		// WHEN
+		int[] result = solveur.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
+		
+		// THEN
+		Assertions.assertThat(result).isEqualTo(new int[] {1, 0, 1, 1, 1, 0});
+	}
+	@Test
+	void should_solve_back_and_forth_4_changes() {
+		// GIVEN
+		Solveur solveur = Solveur.limit(4).periode(10);
+		double a0[] = new double[] { 10.,  1., 10., 1.};
 		double a1[] = new double[] {  1., 20.,  1., 10.};
 		double a2[] = new double[] { 20., 10., 10., 20.};
 		double a3[] = new double[] { 20., 10., 10., 20.};
@@ -115,7 +187,7 @@ class SolveurTest {
 	@Test
 	void should_solve_back_and_forth_prefer_stay_at_end() {
 		// GIVEN
-		Solveur solveur = new Solveur(3);
+		Solveur solveur = Solveur.limit(4).periode(3);
 		double a0[] = new double[] { 10., 10., 10., 10.};
 		double a1[] = new double[] {  1., 20.,  1., 10.};
 		double a2[] = new double[] { 20., 10., 10., 20.};
@@ -132,7 +204,7 @@ class SolveurTest {
 	@Test
 	void should_solve_with_constraint() {
 		// GIVEN
-		Solveur solveur = new Solveur(3);
+		Solveur solveur = Solveur.limit(4).periode(3);
 		double a0[] = new double[] { 10., 10., 10., 10., 10., 10., 10., 10.};
 		double a1[] = new double[] {  1., 20.,  1., 20.,  1., 20.,  1., 20.};
 		double a2[] = new double[] { 20., 10., 10., 20., 10., 20., 10., 20.};
@@ -149,7 +221,7 @@ class SolveurTest {
 	@Test
 	void should_solve_with_constraint_until_4_changes() {
 		// GIVEN
-		Solveur solveur = new Solveur(7);
+		Solveur solveur = Solveur.limit(4).periode(7);
 		double a0[] = new double[] { 10., 10., 10., 10., 10., 10., 10., 10., 10.};
 		double a1[] = new double[] {  1., 20.,  1., 20.,  1., 20.,  1., 20.,  1.};
 		double a2[] = new double[] { 20., 10., 10., 20., 10., 20., 10., 20., 10.};
@@ -165,7 +237,7 @@ class SolveurTest {
 	@Test
 	void should_solve_with_constraint_until_4_changes_with_window() {
 		// GIVEN
-		Solveur solveur = new Solveur(3);
+		Solveur solveur = Solveur.limit(4).periode(3);
 		double a0[] = new double[] { 10., 10., 10., 10., 10., 10., 10., 10., 10.};
 		double a1[] = new double[] {  1., 20.,  1., 20.,  1., 20.,  1., 20.,  1.};
 		double a2[] = new double[] { 20., 10., 10., 20., 10., 20., 10., 20., 10.};
@@ -188,15 +260,15 @@ class SolveurTest {
 		double a4[] = new double[] { 20., 10., 10., 20., 10., 20., 10., 20., 20., 80.};
 		
 		// WHEN
-		Solveur solveur4 = new Solveur(4);
-		int[] result4 = solveur4.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
+		Solveur solveur = Solveur.limit(4).periode(4);
+		int[] result = solveur.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
 		
 		// THEN
-		Assertions.assertThat(result4).isEqualTo(new int[] {1, 4, 4, 4, 1, 1, 1, 3, 2, 1});
+		Assertions.assertThat(result).isEqualTo(new int[] {1, 4, 4, 4, 1, 1, 1, 3, 2, 1});
 		
 		
 		// WHEN
-		Solveur solveur5 = new Solveur(7);
+		Solveur solveur5 = Solveur.limit(4).periode(7);
 		int[] result5 = solveur5.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
 		
 		// THEN
@@ -215,11 +287,11 @@ class SolveurTest {
 		double a4[] = new double[] { 20., 10., 10., 20., 10., 20., 10., 20., 20., 80.};
 
 		// WHEN
-		Solveur solveur4 = new Solveur(12);
-		int[] result4 = solveur4.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
+		Solveur solveur = Solveur.limit(4).periode(12);
+		int[] result = solveur.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
 
 		// THEN
-		Assertions.assertThat(result4).isEqualTo(new int[] {1, 4, 4, 4, 1, 1, 1, 2, 2, 1});
+		Assertions.assertThat(result).isEqualTo(new int[] {1, 4, 4, 4, 1, 1, 1, 2, 2, 1});
 	}
 	
 	@Test
@@ -232,11 +304,11 @@ class SolveurTest {
 		double a4[] = new double[] { 20., 10., 40., 20., 10., 20., 200., 20., 120., 180.,  1.};
 
 		// WHEN
-		Solveur solveur4 = new Solveur(12);
-		int[] result4 = solveur4.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
+		Solveur solveur = Solveur.limit(4).periode(12);
+		int[] result = solveur.solve(new Solveur.Data(a0), new Solveur.Data(a1), new Solveur.Data(a2), new Solveur.Data(a3), new Solveur.Data(a4));
 
 		// THEN
-		Assertions.assertThat(result4).isEqualTo(new int[] {1, 1, 1, 1, 1, 1, 1, 3, 2, 1, 4});
+		Assertions.assertThat(result).isEqualTo(new int[] {1, 1, 1, 1, 1, 1, 1, 3, 2, 1, 4});
 	}
 	
 
